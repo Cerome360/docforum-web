@@ -33,7 +33,7 @@ real API" (no refresh-on-reload flow).
   this repo's static frontend only.
 
 ## Phase W2 — Patient core flow
-**Fully scoped into issues #1–#2, #4–#5, #18–#21.**
+**Fully scoped into issues #1–#2, #4–#5, #18–#21, #38.**
 - [ ] Doctor search (specialty + availability filter). Tracked as [issue #1](https://github.com/DocForum/docforum-web/issues/1) (Medium, 150 pts) — built against a documented assumed API shape, since `docforum-core` has no doctor-list endpoint yet.
 - [ ] Booking + intake form. Tracked as [issue #2](https://github.com/DocForum/docforum-web/issues/2) (High, 200 pts) — must handle the `409` slot-taken response from `docforum-core`'s real booking-concurrency guarantee explicitly, not as a generic error.
 - [ ] My appointments list. Tracked as [issue #3](https://github.com/DocForum/docforum-web/issues/3) (Trivial, 100 pts) — calls `docforum-core`'s real, already-implemented `GET /appointments/mine`, no assumption involved.
@@ -43,11 +43,15 @@ real API" (no refresh-on-reload flow).
 - [x] Dependents management for guardians. Tracked as [issue #19](https://github.com/DocForum/docforum-web/issues/19) (High, 200 pts) — assumed contract against `docforum-core` issue #42.
 - [x] Acting-for profile switcher: book and view records on behalf of a dependent. Tracked as [issue #20](https://github.com/DocForum/docforum-web/issues/20) (High, 200 pts) — client-only UI state (Zustand), threads `patientProfileId` through API calls and query keys.
 - [x] Guardian consent and age-of-majority handover screens. Tracked as [issue #21](https://github.com/DocForum/docforum-web/issues/21) (High, 200 pts) — assumed contract against `docforum-core` issue #42.
+- [x] Medication schedule view generated from active prescriptions. Tracked as [issue #38](https://github.com/DocForum/docforum-web/issues/38) (High, 200 pts) — assumed contract against `docforum-core` issue #9 (prescriptions). Derivation is client-side; ambiguous frequencies are shown as written, never converted into invented times.
 
 ## Phase W3 — Doctor core flow
-**Fully scoped into issues #6–#7.**
+**Fully scoped into issues #6–#7, plus #39–#41.**
 - [ ] Today's appointments / intake view. Tracked as [issue #6](https://github.com/DocForum/docforum-web/issues/6) (Medium, 150 pts).
 - [ ] Consultation screen (notes, outcome, referral/order issuance). Tracked as [issue #7](https://github.com/DocForum/docforum-web/issues/7) (High, 200 pts) — the densest single screen in the app, touches three separate `docforum-core` assumed contracts; the issue explicitly allows splitting into more than one PR if the scope proves unwieldy.
+- [x] Doctor availability manager: generate, block and remove slots on a calendar. Tracked as [issue #39](https://github.com/DocForum/docforum-web/issues/39) (High, 200 pts) — generation uses `docforum-core`'s real single-day endpoint, driven once per day over the chosen range; block/remove assume `docforum-core` issue #53.
+- [x] Doctor verification application: credential uploads and specialty claims. Tracked as [issue #40](https://github.com/DocForum/docforum-web/issues/40) (High, 200 pts) — assumed contract against `docforum-core` issues #52 and #51; `GET /doctors/me` is real.
+- [x] Specialist referral inbox with snapshot context viewer. Tracked as [issue #41](https://github.com/DocForum/docforum-web/issues/41) (High, 200 pts) — assumed contract against `docforum-core` issues #5 and #7; reads only the referral's frozen snapshot, never live consultation notes.
 
 ## Phase W4 — Facility core flow
 **Fully scoped into issue #8.**
@@ -316,3 +320,19 @@ real API" (no refresh-on-reload flow).
   (`/patient/dependents`, `/patient/health`, `/claim-account`). Profile
   switcher in header, acting-for banner on patient pages. Tests for every
   new component.
+- 2026-10-16 — Built medication schedule view (#38, Phase W2) and the
+  doctor-side trio (#39 availability manager, #40 verification
+  application, #41 referral inbox, Phase W3). #38 derives dose times
+  client-side from `docforum-core` issue #9's assumed prescription lines and
+  shows ambiguous or as-needed instructions verbatim rather than inventing
+  times. #39 generates through core's real single-day endpoint (one request
+  per day) and assumes the manager reads/block/remove/unblock routes from
+  core issue #53. #40 reads the real `GET /doctors/me` and assumes the
+  credential and specialty-claim routes from core issues #52/#51. #41 reads
+  only each referral's frozen snapshot, never live consultation notes. Also
+  fixed a latent Phase W2 bug: nothing populated the profile store, so
+  `selectedProfileId` stayed null and every `/patients/:profileId/...`
+  screen was inert — `patients-service.ts` + `useProfileBootstrap` now seed
+  it. New assumed shapes recorded in `ARCHITECTURE_ESSENTIALS.md`;
+  `apiUpload` (XHR, upload progress) added as the single place non-`fetch`
+  HTTP lives. Desktop and mobile screenshots in `docs/screenshots/`.
