@@ -101,79 +101,32 @@ No new backend endpoint. The switcher is client-only UI state (Zustand
 store). Every patient API call and React Query key includes the selected
 `patientProfileId` so caches never mix profiles.
 
-## Known assumptions — issues #38–#41 (Phase W2/W3)
+### Data export (docforum-core#40, issue #26)
+- `POST /account/data-export` (body: `{password}`) → `DataExport`
+- `GET /account/data-export` → `DataExport | null`
+- `GET /account/data-export/:id/download` → file stream (`application/json`)
+- `DataExport` shape: `{id, patientProfileId, status: 'pending'|'processing'|'ready'|'expired'|'failed', requestedAt, readyAt?, expiresAt?, fileSizeBytes?, downloadUrl?, errorMessage?}`
+- Ready exports expire after 24 hours. Downloads require bearer authorization and avoid keeping export contents in memory.
 
-Same rule as the two sections above: these shapes are assumed, not implemented
-in `docforum-core` yet. Each mirrors the real model fields it will eventually
-hang off, so reconciliation should be a rename rather than a rewrite.
+### Account deletion (docforum-core#41, issue #27)
+- `POST /account/delete` (body: `{password, confirmation: 'DELETE'}`) → `{success, message, deletedAt}`
+- Clinical and statutory retention: identity credentials (name, email, password hashes, guardian links) are permanently scrubbed/anonymized. Clinical consultation notes, diagnostic orders, and cryptographic payment/escrow records are retained by law in de-identified form.
+- Deletion is blocked if there are active orders or unreleased funded escrows.
+- Client clears all QueryClient cache and Zustand session/profile state.
 
-### Patient's own profile and prescriptions (#38, docforum-core#9)
-- `GET /patients/me` → `PatientProfile`. Core has `GET /doctors/me` but no
-  patient equivalent, and `POST /auth/login` returns only
-  `{ user, accessToken }` — without this the client cannot scope any
-  `/patients/:profileId/...` read.
-- `GET /patients/:profileId/prescriptions?status=active` → `Prescription[]`
-- `Prescription`: `{id, status: 'issued'|'fulfilled'|'expired'|'superseded', createdAt, patientProfileId, prescribingDoctorId, prescribingDoctorName?, items: PrescriptionItem[]}`
-- `PrescriptionItem`: `{id, drugName, dosage, frequency, duration}`.
-  `frequency`/`duration` are the prescriber's free text (`'every 8 hours'`,
-  `'as needed'`, `'ongoing'`). `features/medications/schedule.ts` derives dose
-  times from them client-side and never rewrites them — an ambiguous or
-  free-text frequency is displayed verbatim instead of being scheduled.
-- Core has no prescription routes at all yet, so `OrderStatus` is assumed
-  wholesale.
+### Care thread timeline (issue #28)
+- `GET /patients/:patientProfileId/care-threads` → `CareThread[]`
+- `GET /care-threads/:id` → `CareThread`
+- Aggregates appointments, consultations, referrals, orders, fulfillment, and escrow payment settlement into a single continuous journey timeline.
+- Progressive rendering and graceful degradation when modules are not yet implemented.
 
-### Availability manager (#39, docforum-core#53)
-- REAL: `POST /availability/doctors/:doctorProfileId/slots/generate`
-  (`{date: 'YYYY-MM-DD', startHour, endHour, slotLengthMinutes}` →
-  `{created, skipped, slots}`). Core has no recurrence engine, so a date range
-  is one request per day issued from this client.
-- ASSUMED: `GET /doctors/me/slots?from=&to=` → `AvailabilitySlot[]` (every
-  status, past included — the public
-  `GET /availability/doctors/:id/slots` returns only open future slots and
-  cannot drive a manager view), `POST /doctors/me/slots/block`
-  (`{startTime, endTime, reason?}` → `{blockedSlotIds, conflicts}`),
-  `DELETE /availability/slots/:slotId`, `POST /availability/slots/:slotId/unblock`.
-- `AvailabilitySlot`: `{id, doctorProfileId, status: 'open'|'held'|'booked', startTime, endTime, createdAt, updatedAt, appointment?: {id, status, patientFullName?} | null}`.
-  The embedded `appointment` is assumed: the manager has to say which booked
-  slot belongs to whom, and there is no slot→appointment route yet.
-- Block/remove are optimistic and roll back on conflict; the server's conflict
-  list is what gets rendered.
-
-### Doctor verification application (#40, docforum-core#51/#52)
-- ASSUMED, all of it: `GET /doctors/me/credentials`,
-  `POST /doctors/me/credentials` (multipart fields `file`, `type`),
-  `POST /doctors/me/credentials/:id/resubmit` (multipart field `file`),
-  `DELETE /doctors/me/credentials/:id`, `GET /specialties`,
-  `GET /doctors/me/specialty-claims`, `POST /doctors/me/specialty-claims`
-  (`{specialtyId}`), `DELETE /doctors/me/specialty-claims/:id`,
-  `POST /doctors/me/specialty-claims/:id/resubmit`.
-- `GET /doctors/me` is real and is read through `doctor-service.ts` only, so
-  the verification flow and the availability manager cannot drift on it.
-- `DoctorCredential`: `{id, doctorProfileId, type: CredentialType, fileName, mimeType, sizeBytes, status: 'pending'|'verified'|'rejected', rejectionReason?, submittedAt, updatedAt}`;
-  `SpecialtyClaim`: `{id, doctorProfileId, specialtyId, specialty, status, rejectionReason?, submittedAt, updatedAt}`.
-  Per-item status is assumed because #51 reviews each document and each
-  specialty claim individually, while `DoctorProfile.verificationStatus` stays
-  profile-level.
-- `fileName` is display-only: the backend is expected to store a key behind a
-  get-on-demand/signed URL, so nothing here renders an upload as a link.
-  Upload progress goes through `apiUpload` (XHR) in `api-client.ts` — the
-  repo's only non-`fetch` HTTP, kept in that file for the same reason.
-
-### Referral inbox (#41, docforum-core#5/#7)
-- ASSUMED: `GET /doctors/me/referrals?status=&cursor=&limit=20` →
-  `CursorPage<ReferralSummary>` (`{items, nextCursor}`) and
-  `GET /referrals/:id` → `ReferralDetail` (403/404 once a referral has been
-  reassigned to another specialist).
-- `status=upcoming` is an assumed server-side filter (referrals whose
-  resulting appointment is still scheduled); the `ReferralStatus` union itself
-  mirrors core's referral lifecycle.
-- `ReferralSummary`: `{id, status, snapshotNotes, referringDoctor: {id, fullName}, targetSpecialty?, snapshotTakenAt, createdAt, updatedAt, resultingAppointmentId?, appointment?}`;
-  `ReferralDetail` adds `intakeSnapshot: {id, symptoms: string[], freeTextNotes?, submittedAt}`.
-- Those snapshot fields are copies, not live references (core
-  `ARCHITECTURE.md` §4.4), which is why this feature never calls an
-  intake/consultation endpoint — there is deliberately no live-notes fetch.
+### Facility finder with distance sorting (docforum-core#74, issue #29)
+- `GET /facilities?type=&lat=&lng=&query=` → `FacilityWithDistance[]`
+- OpenStreetMap tiles with attribution.
+- Patient location is requested with transparent consent, kept strictly in transient memory, and NEVER persisted to storage or URLs.
 
 ## Roadmap / status
 See `ROADMAP.md` in this repo, and Phase 7 in `docforum-core`'s
 `ROADMAP.md` for the original (pre-split) frontend phase this was carved
 out of.
+

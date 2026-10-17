@@ -140,198 +140,73 @@ export interface PaymentIntent {
   updatedAt: string;
 }
 
-// --- Availability slots (Phase W3 — `AvailabilitySlot` is a real
-// docforum-core model; the manager-only fields are assumed) ---------------
+// --- Data export (Phase W2, issue #26 — docforum-core#40) -------------------
 
-export type SlotStatus = 'open' | 'held' | 'booked';
+export type DataExportStatus = 'pending' | 'processing' | 'ready' | 'expired' | 'failed';
 
-export interface AvailabilitySlot {
+export interface DataExport {
   id: string;
-  doctorProfileId: string;
-  status: SlotStatus;
-  startTime: string;
-  endTime: string;
-  createdAt: string;
-  updatedAt: string;
-  // Assumed: the manager needs the booked appointment behind a `booked`
-  // slot (core's `AvailabilitySlot.appointment` 1:1 relation) to show what
-  // a blocked range would take out. Not returned by the public list
-  // endpoint today. See ARCHITECTURE_ESSENTIALS.md.
-  appointment?: SlotAppointment | null;
-}
-
-/** Assumed projection of docforum-core's real `Appointment` model, scoped
- * to what the availability calendar renders. */
-export interface SlotAppointment {
-  id: string;
-  status: AppointmentStatus;
-  // Assumed: expanded patient identity for the doctor's own calendar. The
-  // core model only carries `patientProfileId`.
-  patientFullName?: string;
-}
-
-export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-
-/** Mirrors the real `POST /availability/doctors/:id/slots/generate` body —
- * fixed-length, single-day, no recurrence (core ARCHITECTURE.md §6.3.6). */
-export interface SlotGenerationInput {
-  date: string; // 'YYYY-MM-DD'
-  startHour: number;
-  endHour: number;
-  slotLengthMinutes: number;
-}
-
-export interface SlotGenerationResult {
-  created: number;
-  skipped: number;
-  slots: AvailabilitySlot[];
-}
-
-/** Assumed (docforum-core#53 not landed): block a range, and remove a
- * single open slot. `conflicts` is the deliberate-handling list — the
- * backend reports booked appointments inside the range rather than
- * cancelling them. */
-export interface BlockRangeInput {
-  startTime: string;
-  endTime: string;
-  reason?: string;
-}
-
-export interface BlockRangeResult {
-  blockedSlotIds: string[];
-  conflicts: SlotAppointment[];
-}
-
-// --- Doctor verification (Phase W3 — assumed, docforum-core#52/#51 not
-// landed) ------------------------------------------------------------------
-
-export type CredentialType =
-  | 'medical_license'
-  | 'degree_certificate'
-  | 'specialty_certificate'
-  | 'identity_document'
-  | 'other';
-
-/** Items in a doctor's application are each verified individually
- * (docforum-core#51), so this is per-document/per-specialty, not the
- * profile-level `VerificationStatus`. */
-export type ClaimItemStatus = 'pending' | 'verified' | 'rejected';
-
-export interface DoctorCredential {
-  id: string;
-  doctorProfileId: string;
-  type: CredentialType;
-  /** Display label only. The backend stores a key behind a signed/get-on-demand
-   * URL — never a permanent public URL, and never rendered as a link here. */
-  fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  status: ClaimItemStatus;
-  rejectionReason?: string | null;
-  submittedAt: string;
-  updatedAt: string;
-}
-
-/** Mirrors docforum-core's real, migrated `Specialty` model. */
-export interface Specialty {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-/** Assumed (docforum-core#51): a specialty claim carries its own review
- * status — core's real `DoctorSpecialty` join table has no status column
- * yet. */
-export interface SpecialtyClaim {
-  id: string;
-  doctorProfileId: string;
-  specialtyId: string;
-  specialty: Specialty;
-  status: ClaimItemStatus;
-  rejectionReason?: string | null;
-  submittedAt: string;
-  updatedAt: string;
-}
-
-// --- Prescriptions (Phase W2 — assumed, docforum-core#9 not landed) ------
-
-/** Mirrors core's `OrderStatus` enum. */
-export type OrderStatus = 'issued' | 'fulfilled' | 'expired' | 'superseded';
-
-/** Mirrors core's Phase 0 `PrescriptionItem` placeholders (`drugName`,
- * `dosage`, `frequency`, `duration` are all free-text Strings there —
- * which is exactly why schedule derivation must degrade to showing them
- * as-is rather than guessing). */
-export interface PrescriptionItem {
-  id: string;
-  drugName: string;
-  dosage: string;
-  /** Free text, e.g. 'every 8 hours', 'twice daily', 'as needed'. */
-  frequency: string;
-  /** Free text, e.g. '7 days', '2 weeks', 'ongoing'. */
-  duration: string;
-}
-
-export interface Prescription {
-  id: string;
-  status: OrderStatus;
-  createdAt: string;
-  // Assumed relation fields — core's Prescription is `{id, status, createdAt}`
-  // with these still TODO.
   patientProfileId: string;
-  prescribingDoctorId: string;
-  prescribingDoctorName?: string;
-  items: PrescriptionItem[];
+  status: DataExportStatus;
+  requestedAt: string;
+  readyAt?: string | null;
+  expiresAt?: string | null;
+  fileSizeBytes?: number | null;
+  downloadUrl?: string | null;
+  errorMessage?: string | null;
 }
 
-// --- Referrals (Phase W3 — assumed, docforum-core#5/#7 not landed) -------
+// --- Account deletion (Phase W2, issue #27 — docforum-core#41) ---------------
 
-/** Mirrors core's `ReferralStatus` enum. */
-export type ReferralStatus = 'pending' | 'accepted' | 'declined' | 'completed' | 'expired';
-
-/** Assumed (core `IntakeForm` is `{id, createdAt}` with `symptoms`/
- * `freeTextNotes` still TODO). This is the *snapshot copy* taken at
- * referral time — core's schema note is explicit that these must be copies,
- * not live references (ARCHITECTURE.md §4.4), and #41's review criterion is
- * that no live consultation-notes data is substituted for it. */
-export interface ReferralIntakeSnapshot {
-  id: string;
-  symptoms: string[];
-  freeTextNotes?: string;
-  submittedAt: string;
+export interface DeleteAccountResponse {
+  success: boolean;
+  message: string;
+  deletedAt: string;
 }
 
-/** Minimal referring-doctor projection (assumed expansion). */
-export interface ReferringDoctor {
+// --- Care thread timeline (Phase W2, issue #28) ------------------------------
+
+export type CareStepType = 'appointment' | 'consultation' | 'referral' | 'order' | 'fulfillment' | 'payment';
+export type CareStepStatus = 'completed' | 'in_progress' | 'action_required' | 'pending' | 'skipped';
+
+export interface CareThreadStep {
   id: string;
-  fullName: string;
+  stepType: CareStepType;
+  title: string;
+  description: string;
+  status: CareStepStatus;
+  timestamp?: string | null;
+  actionLabel?: string | null;
+  actionUrl?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
-export interface ReferralSummary {
+export interface CareThread {
   id: string;
-  status: ReferralStatus;
-  /** Mirrors core's real `snapshotNotes` — the referring doctor's note,
-   * frozen at referral time. */
-  snapshotNotes: string;
-  referringDoctor: ReferringDoctor;
-  targetSpecialty?: Specialty | null;
-  // Assumed: `snapshotTakenAt` is a distinct field from core's `createdAt`.
-  // If the real API only exposes `createdAt`, reconcile here.
-  snapshotTakenAt: string;
-  createdAt: string;
+  patientProfileId: string;
+  title: string;
+  doctorName: string;
+  specialty: string;
+  startedAt: string;
   updatedAt: string;
-  /** Mirrors core's TODO `resultingAppointmentId`. */
-  resultingAppointmentId?: string | null;
-  appointment?: SlotAppointment | null;
+  status: 'active' | 'completed' | 'cancelled';
+  steps: CareThreadStep[];
 }
 
-export interface ReferralDetail extends ReferralSummary {
-  intakeSnapshot: ReferralIntakeSnapshot;
+// --- Facility finder with location & distance (Phase W2, issue #29) ----------
+
+export interface FacilityLocation {
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
 }
 
-/** Assumed cursor-pagination envelope for list endpoints that page by
- * cursor rather than offset. */
-export interface CursorPage<T> {
-  items: T[];
-  nextCursor: string | null;
+export interface FacilityWithDistance extends FacilityProfile {
+  location?: FacilityLocation;
+  distanceKm?: number | null;
+  isOpen?: boolean;
+  phone?: string;
+  rating?: number;
 }
+
