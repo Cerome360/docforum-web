@@ -2,13 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as verificationService from '../../../services/doctor-verification-service';
 import { invalidateApplication } from './useVerification';
 import { useAuthStore } from '../../../store/auth-store';
-import type { SpecialtyClaim } from '../../../types/models';
+import type { DoctorSpecialtyClaim } from '../../../types/models';
 
 export function useCreateSpecialtyClaim() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const queryClient = useQueryClient();
 
-  return useMutation<SpecialtyClaim, Error, { specialtyId: string }>({
+  return useMutation<DoctorSpecialtyClaim, Error, { specialtyId: string }>({
     mutationFn: ({ specialtyId }) => verificationService.createSpecialtyClaim(specialtyId, accessToken!),
     onSuccess: () => invalidateApplication(queryClient),
   });
@@ -30,7 +30,7 @@ export function useResubmitSpecialtyClaim() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const queryClient = useQueryClient();
 
-  return useMutation<SpecialtyClaim, Error, { claimId: string }>({
+  return useMutation<DoctorSpecialtyClaim, Error, { claimId: string }>({
     mutationFn: ({ claimId }) => verificationService.resubmitSpecialtyClaim(claimId, accessToken!),
     onSuccess: () => invalidateApplication(queryClient),
   });

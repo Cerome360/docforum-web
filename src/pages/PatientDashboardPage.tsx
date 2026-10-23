@@ -12,6 +12,7 @@ import { CareThreadPage } from './CareThreadPage';
 import { OrdersPage } from './OrdersPage';
 import { OrderDetailPage } from './OrderDetailPage';
 import { MessageThreadPage } from './MessageThreadPage';
+import { useProfileBootstrap } from '../features/patients/hooks/useProfileBootstrap';
 import styles from './PatientDashboardPage.module.css';
 
 function PatientHome() {

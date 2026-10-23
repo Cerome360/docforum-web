@@ -9,7 +9,7 @@ import type {
   ClaimItemStatus,
   CredentialType,
   DoctorCredential,
-  SpecialtyClaim,
+  DoctorSpecialtyClaim,
 } from '../../../types/models';
 import styles from './VerificationChecklist.module.css';
 
@@ -59,7 +59,7 @@ export function latestCredentialByType(
  * (`REQUIRED_CREDENTIALS`) and only the statuses come from the API. */
 export function deriveChecklistItems(
   credentials: readonly DoctorCredential[],
-  claims: readonly SpecialtyClaim[] = [],
+  claims: readonly DoctorSpecialtyClaim[] = [],
 ): ChecklistItem[] {
   const byType = latestCredentialByType(credentials);
 
@@ -99,7 +99,7 @@ export function checklistSummary(items: readonly ChecklistItem[]): ChecklistSumm
 
 interface Props {
   credentials: readonly DoctorCredential[];
-  claims?: readonly SpecialtyClaim[];
+  claims?: readonly DoctorSpecialtyClaim[];
 }
 
 export function VerificationChecklist({ credentials, claims = [] }: Props) {

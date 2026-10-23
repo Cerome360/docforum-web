@@ -4,7 +4,7 @@ import { render, screen, waitFor } from '../../../test/render';
 import { SpecialtyClaimPicker } from './SpecialtyClaimPicker';
 import { useAuthStore } from '../../../store/auth-store';
 import * as verificationService from '../../../services/doctor-verification-service';
-import type { ClaimItemStatus, Specialty, SpecialtyClaim } from '../../../types/models';
+import type { ClaimItemStatus, DoctorSpecialtyClaim, Specialty } from '../../../types/models';
 
 vi.mock('../../../services/doctor-verification-service');
 
@@ -12,7 +12,7 @@ const CARDIOLOGY: Specialty = { id: 'sp-1', name: 'Cardiology', slug: 'cardiolog
 const DERMATOLOGY: Specialty = { id: 'sp-2', name: 'Dermatology', slug: 'dermatology' };
 const CATALOG = [CARDIOLOGY, DERMATOLOGY];
 
-function claim(overrides: Partial<SpecialtyClaim> = {}): SpecialtyClaim {
+function claim(overrides: Partial<DoctorSpecialtyClaim> = {}): DoctorSpecialtyClaim {
   return {
     id: 'sc-1',
     doctorProfileId: 'dp-1',
@@ -32,7 +32,7 @@ const STATUS_ROWS: { status: ClaimItemStatus; label: string; rejected: boolean; 
   { status: 'rejected', label: 'Rejected', rejected: true, withdrawable: true },
 ];
 
-function renderPicker(claims: readonly SpecialtyClaim[], props: Partial<{ isLoading: boolean; error: string | null }> = {}) {
+function renderPicker(claims: readonly DoctorSpecialtyClaim[], props: Partial<{ isLoading: boolean; error: string | null }> = {}) {
   return render(
     <SpecialtyClaimPicker
       catalog={CATALOG}

@@ -5,7 +5,7 @@ import { useAuthStore } from '../../../store/auth-store';
 import { useProfileStore } from '../../../store/profile-store';
 import { ApiError } from '../../../services/api-client';
 import * as prescriptionsService from '../../../services/prescriptions-service';
-import type { Prescription } from '../../../types/models';
+import type { MedicationPrescription } from '../../../types/models';
 
 vi.mock('../../../services/prescriptions-service');
 
@@ -16,7 +16,7 @@ function isoAt(base: Date, offsetDays: number, hour: number): string {
   return d.toISOString();
 }
 
-function prescription(overrides: Partial<Prescription> = {}, now = new Date()): Prescription {
+function prescription(overrides: Partial<MedicationPrescription> = {}, now = new Date()): MedicationPrescription {
   return {
     id: 'rx-1',
     status: 'issued',

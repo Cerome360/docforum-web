@@ -5,7 +5,7 @@ import {
   parseDuration,
   parseFrequency,
 } from './schedule';
-import type { Prescription, PrescriptionItem } from '../../types/models';
+import type { MedicationPrescription, PrescriptionItem } from '../../types/models';
 
 // Fixed clock for every time-based assertion — derivation never reads the
 // real clock, so these stay deterministic.
@@ -22,7 +22,7 @@ function item(overrides: Partial<PrescriptionItem> = {}): PrescriptionItem {
   };
 }
 
-function rx(overrides: Partial<Prescription> = {}): Prescription {
+function rx(overrides: Partial<MedicationPrescription> = {}): MedicationPrescription {
   return {
     id: 'rx-1',
     status: 'issued',

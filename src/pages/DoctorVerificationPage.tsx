@@ -12,7 +12,7 @@ import {
   useSpecialtyCatalog,
   useSpecialtyClaims,
 } from '../features/verification/hooks/useVerification';
-import type { DoctorCredential, SpecialtyClaim } from '../types/models';
+import type { DoctorCredential, DoctorSpecialtyClaim } from '../types/models';
 
 function messageFrom(error: unknown, fallback: string): string {
   // Keep the server's sentence whenever there is one: "The license is expired."
@@ -26,7 +26,7 @@ function messageFrom(error: unknown, fallback: string): string {
  * something the per-item rows already name. */
 function deriveRejectionReason(
   credentials: readonly DoctorCredential[],
-  claims: readonly SpecialtyClaim[],
+  claims: readonly DoctorSpecialtyClaim[],
 ): string | null {
   const rejected = [
     ...credentials.filter((item) => item.status === 'rejected'),

@@ -3,14 +3,14 @@ import { Button } from '../../../components/Button';
 import { FormError } from '../../../components/FormError';
 import { useCreateSpecialtyClaim, useDeleteSpecialtyClaim, useResubmitSpecialtyClaim } from '../hooks/useSpecialtyClaims';
 import { CLAIM_ITEM_STATUS_LABELS, NO_REJECTION_REASON } from '../requirements';
-import type { ClaimItemStatus, Specialty, SpecialtyClaim } from '../../../types/models';
+import type { ClaimItemStatus, DoctorSpecialtyClaim, Specialty } from '../../../types/models';
 import styles from './SpecialtyClaimPicker.module.css';
 
 interface Props {
   /** Controlled catalog from `GET /specialties` — claims are only ever made
    * against it, never typed free-form. */
   catalog: readonly Specialty[];
-  claims: readonly SpecialtyClaim[];
+  claims: readonly DoctorSpecialtyClaim[];
   isLoading: boolean;
   error: string | null;
 }

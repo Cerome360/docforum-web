@@ -411,6 +411,10 @@ export function appointmentStatusLabel(status: AppointmentStatus): string {
   switch (status) {
     case 'scheduled':
       return 'still scheduled';
+    case 'checked_in':
+      return 'checked in';
+    case 'in_progress':
+      return 'in progress';
     case 'completed':
       return 'completed';
     case 'cancelled':

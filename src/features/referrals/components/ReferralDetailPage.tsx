@@ -11,6 +11,8 @@ import styles from './ReferralDetailPage.module.css';
 
 const APPOINTMENT_LABELS: Record<AppointmentStatus, string> = {
   scheduled: 'Scheduled',
+  checked_in: 'Checked in',
+  in_progress: 'In progress',
   completed: 'Completed',
   cancelled: 'Cancelled',
   no_show: 'Did not attend',

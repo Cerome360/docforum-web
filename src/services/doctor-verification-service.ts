@@ -5,7 +5,7 @@
 // Everything in this file is ASSUMED (docforum-core#52/#51 are not landed) —
 // see ARCHITECTURE_ESSENTIALS.md.
 import { apiFetch, apiUpload } from './api-client';
-import type { CredentialType, DoctorCredential, Specialty, SpecialtyClaim } from '../types/models';
+import type { CredentialType, DoctorCredential, DoctorSpecialtyClaim, Specialty } from '../types/models';
 
 /** Wired through to `apiUpload`, which is the only place XHR lives. */
 export interface UploadHandlers {
@@ -26,7 +26,13 @@ export function uploadCredential(
   const formData = new FormData();
   formData.append('file', file);
   formData.append('type', type);
-  return apiUpload<DoctorCredential>('/doctors/me/credentials', { formData, accessToken, ...handlers });
+  return apiUpload<DoctorCredential>('/doctors/me/credentials', formData, {
+    accessToken,
+    signal: handlers.signal,
+    // `apiUpload` reports a percentage; this flow renders real byte counts.
+    onProgress: (percent) =>
+      handlers.onProgress?.(Math.round((percent / 100) * file.size), file.size),
+  });
 }
 
 export function resubmitCredential(
@@ -37,10 +43,11 @@ export function resubmitCredential(
 ): Promise<DoctorCredential> {
   const formData = new FormData();
   formData.append('file', file);
-  return apiUpload<DoctorCredential>(`/doctors/me/credentials/${credentialId}/resubmit`, {
-    formData,
+  return apiUpload<DoctorCredential>(`/doctors/me/credentials/${credentialId}/resubmit`, formData, {
     accessToken,
-    ...handlers,
+    signal: handlers.signal,
+    onProgress: (percent) =>
+      handlers.onProgress?.(Math.round((percent / 100) * file.size), file.size),
   });
 }
 
@@ -54,15 +61,15 @@ export function listSpecialties(accessToken?: string | null): Promise<Specialty[
   return apiFetch<Specialty[]>('/specialties', { accessToken });
 }
 
-export function listMySpecialtyClaims(accessToken: string): Promise<SpecialtyClaim[]> {
-  return apiFetch<SpecialtyClaim[]>('/doctors/me/specialty-claims', { accessToken });
+export function listMySpecialtyClaims(accessToken: string): Promise<DoctorSpecialtyClaim[]> {
+  return apiFetch<DoctorSpecialtyClaim[]>('/doctors/me/specialty-claims', { accessToken });
 }
 
 export function createSpecialtyClaim(
   specialtyId: string,
   accessToken: string,
-): Promise<SpecialtyClaim> {
-  return apiFetch<SpecialtyClaim>('/doctors/me/specialty-claims', {
+): Promise<DoctorSpecialtyClaim> {
+  return apiFetch<DoctorSpecialtyClaim>('/doctors/me/specialty-claims', {
     method: 'POST',
     body: { specialtyId },
     accessToken,
@@ -76,8 +83,8 @@ export function deleteSpecialtyClaim(claimId: string, accessToken: string): Prom
 export function resubmitSpecialtyClaim(
   claimId: string,
   accessToken: string,
-): Promise<SpecialtyClaim> {
-  return apiFetch<SpecialtyClaim>(`/doctors/me/specialty-claims/${claimId}/resubmit`, {
+): Promise<DoctorSpecialtyClaim> {
+  return apiFetch<DoctorSpecialtyClaim>(`/doctors/me/specialty-claims/${claimId}/resubmit`, {
     method: 'POST',
     body: {},
     accessToken,

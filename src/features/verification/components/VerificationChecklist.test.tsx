@@ -8,7 +8,7 @@ import {
   type ChecklistItemState,
 } from './VerificationChecklist';
 import { REQUIRED_CREDENTIALS } from '../requirements';
-import type { ClaimItemStatus, CredentialType, DoctorCredential, SpecialtyClaim } from '../../../types/models';
+import type { ClaimItemStatus, CredentialType, DoctorCredential, DoctorSpecialtyClaim } from '../../../types/models';
 
 function credential(
   type: CredentialType,
@@ -91,7 +91,7 @@ describe('deriveChecklistItems', () => {
   });
 
   it('adds a row per claimed specialty with its own status', () => {
-    const claims: SpecialtyClaim[] = [
+    const claims: DoctorSpecialtyClaim[] = [
       {
         id: 'sc-1',
         doctorProfileId: 'dp-1',

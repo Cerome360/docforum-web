@@ -135,36 +135,3 @@ export function DoctorDashboardPage() {
     </div>
   );
 }
-
-export function DoctorDashboardPage() {
-  return (
-    <Routes>
-      <Route index element={<PendingDoctorGate><DoctorHome /></PendingDoctorGate>} />
-      <Route path="verification" element={<DoctorVerificationPage />} />
-      <Route
-        path="availability"
-        element={
-          <PendingDoctorGate>
-            <DoctorAvailabilityPage />
-          </PendingDoctorGate>
-        }
-      />
-      <Route
-        path="referrals/*"
-        element={
-          <PendingDoctorGate>
-            <DoctorReferralsPage />
-          </PendingDoctorGate>
-        }
-      />
-      <Route
-        path="appointments/:appointmentId"
-        element={
-          <PendingDoctorGate>
-            <AppointmentPlaceholder />
-          </PendingDoctorGate>
-        }
-      />
-    </Routes>
-  );
-}

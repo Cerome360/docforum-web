@@ -1,4 +1,4 @@
-import type { Prescription } from '../../types/models';
+import type { MedicationPrescription } from '../../types/models';
 
 // Pure, dependency-free schedule derivation. Everything time-based takes an
 // explicit `now` so callers (and tests) fully control the clock — nothing here
@@ -193,7 +193,7 @@ export interface MedicationSchedule {
   overlaps: OverlapWarning[];
 }
 
-export function buildCourses(prescriptions: Prescription[], now: Date): Course[] {
+export function buildCourses(prescriptions: MedicationPrescription[], now: Date): Course[] {
   const todayStart = startOfDay(now).getTime();
 
   const courses: Course[] = [];
@@ -288,7 +288,7 @@ function dayLabel(dayStart: Date, offset: number): string {
 }
 
 export function buildMedicationSchedule(
-  prescriptions: Prescription[],
+  prescriptions: MedicationPrescription[],
   now: Date,
   horizonDays = 7,
 ): MedicationSchedule {
